@@ -20,6 +20,9 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.Bukkit;
+import java.util.Random;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.block.Block;
 
 public final class Main extends JavaPlugin implements Listener {
 
