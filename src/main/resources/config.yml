@@ -19,3 +19,12 @@ cooldowns:
 messages:
   kox-cooldown: "&cKoxy! Musisz poczekac jeszcze &e{TIME} &c!"
   pearl-cooldown: "&cPerla! Musisz poczekac jeszcze &e{TIME} &c!"
+
+stone-exp:
+  # ile expa wypada z kamienia
+  exp-min: 1
+  exp-max: 3
+  # czy tylko jak kopiesz kilofem
+  only-pickaxe: true
+  # wiadomosc (pusta = wylaczona)
+  # message: "&a+{EXP} exp za kamien"

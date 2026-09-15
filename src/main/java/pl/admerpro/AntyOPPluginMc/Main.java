@@ -23,11 +23,14 @@ import org.bukkit.Bukkit;
 
 public final class Main extends JavaPlugin implements Listener {
 
+    Random rand = new Random();
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
 
         getServer().getPluginManager().registerEvents(this, this);
+
 
         getLogger().info("Plugin został włączony! Ochrona działa.");
     }
@@ -257,6 +260,30 @@ public final class Main extends JavaPlugin implements Listener {
 
         Bukkit.getScheduler().runTask(this, () -> {
             player.setCooldown(Material.ENDER_PEARL, cooldownTicks);
+        });
+    }
+
+    // Drop expa z kamienia (StoneExp)
+    @EventHandler
+    public void onBreak(BlockBreakEvent e) {
+        Block b = e.getBlock();
+        if (b.getType() != Material.STONE) return;
+
+        if (getConfig().getBoolean("stone-exp.only-pickaxe", true)) {
+            Material tool = e.getPlayer().getInventory().getItemInMainHand().getType();
+            if (!tool.name().endsWith("_PICKAXE")) return;
+        }
+
+        // nie dawaj expa jak kamien postawiony przez gracza (anticheat)
+        if (!e.isDropItems()) return;
+
+        int min = getConfig().getInt("stone-exp.exp-min", 1);
+        int max = getConfig().getInt("stone-exp.exp-max", 3);
+        int exp = min + rand.nextInt(max - min + 1);
+
+        // drop exp orb
+        b.getWorld().spawn(b.getLocation().add(0.5, 0.5, 0.5), org.bukkit.entity.ExperienceOrb.class, orb -> {
+            orb.setExperience(exp);
         });
     }
 }
