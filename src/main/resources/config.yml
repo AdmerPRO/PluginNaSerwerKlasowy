@@ -21,10 +21,10 @@ messages:
   pearl-cooldown: "&cPerla! Musisz poczekac jeszcze &e{TIME} &c!"
 
 stone-exp:
-  # ile expa wypada z kamienia
   exp-min: 1
   exp-max: 3
-  # czy tylko jak kopiesz kilofem
   only-pickaxe: true
-  # wiadomosc (pusta = wylaczona)
-  # message: "&a+{EXP} exp za kamien"
+
+max_enchantments:
+  max-enchantments: 3
+  max-enchantment-level: 5

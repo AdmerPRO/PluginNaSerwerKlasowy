@@ -23,17 +23,101 @@ import org.bukkit.Bukkit;
 import java.util.Random;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.block.Block;
+import java.util.Iterator;
+import org.bukkit.entity.Entity;
+import org.bukkit.event.entity.AreaEffectCloudApplyEvent;
+import org.bukkit.event.entity.EntityPotionEffectEvent;
+import org.bukkit.event.entity.PotionSplashEvent;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.event.enchantment.EnchantItemEvent;
+import org.bukkit.event.entity.VillagerAcquireTradeEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.PrepareAnvilEvent;
+import org.bukkit.inventory.MerchantRecipe;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class Main extends JavaPlugin implements Listener {
 
     Random rand = new Random();
 
+    private int MAX_PROT;
+    private int MAX_SHARP;
+
+    private int KOX_SECONDS;
+    private int PEARL_SECONDS;
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
 
-        getServer().getPluginManager().registerEvents(this, this);
+        this.MAX_PROT = this.getConfig().getInt("max_enchantments.max-protection", 3);
+        this.MAX_SHARP = this.getConfig().getInt("max_enchantments.max-sharpness", 4);
 
+        this.KOX_SECONDS = getConfig().getInt("cooldown.koks", 300);
+        this.PEARL_SECONDS = getConfig().getInt("cooldown.perla", 8);
+
+        getServer().getPluginManager().registerEvents(this, this);
+        this.getServer().getScheduler().runTaskTimer(this, () -> this.getServer().getOnlinePlayers().forEach((p) -> {
+            Iterator i$ = p.getInventory().iterator();
+
+            while(i$.hasNext()) {
+                ItemStack it = (ItemStack)i$.next();
+                if (this.isStrength2(it)) {
+                    p.getInventory().remove(it);
+                    p.sendMessage("§cSiła II jest zablokowana!");
+                }
+
+                if (it != null) {
+                    if (this.isDiaArmor(it.getType()) && it.getEnchantmentLevel(Enchantment.PROTECTION) > this.MAX_PROT) {
+                        it.removeEnchantment(Enchantment.PROTECTION);
+                        it.addEnchantment(Enchantment.PROTECTION, this.MAX_PROT);
+                    }
+
+                    if (it.getType() == Material.DIAMOND_SWORD && it.getEnchantmentLevel(Enchantment.SHARPNESS) > this.MAX_SHARP) {
+                        it.removeEnchantment(Enchantment.SHARPNESS);
+                        it.addEnchantment(Enchantment.SHARPNESS, this.MAX_SHARP);
+                    } 
+                }    
+            }
+        }), 100L, 100L);
+
+        this.getServer().getScheduler().runTaskTimer(this, () -> {
+            for (Player p : getServer().getOnlinePlayers()) {
+                List<String> parts = new ArrayList<>();
+
+                if (p.hasCooldown(Material.ENCHANTED_GOLDEN_APPLE)) {
+                    int sec = (int) Math.ceil(p.getCooldown(Material.ENCHANTED_GOLDEN_APPLE) / 20.0);
+
+                    if (sec > 0) {
+                        parts.add("§6KOX §f" + format(sec));
+                    }
+                }
+
+                if (p.hasCooldown(Material.ENDER_PEARL)) {
+                    int sec = (int) Math.ceil(p.getCooldown(Material.ENDER_PEARL) / 20.0);
+
+                    if (sec > 0) {
+                        parts.add("§aPERLA §f" + format(sec));
+                    }
+                }
+
+                if (parts.isEmpty()) {
+                    p.sendActionBar("");
+                    continue;
+                }
+
+                String msg = String.join(" §8| ", parts);
+                p.sendActionBar(msg);
+        }
+    }, 0L, 10L);
 
         getLogger().info("Plugin został włączony! Ochrona działa.");
     }
@@ -231,38 +315,56 @@ public final class Main extends JavaPlugin implements Listener {
     }
 
     // Cooldown na koksy
-    @EventHandler
-    public void onItemConsume(PlayerItemConsumeEvent event) {
-        Player player = event.getPlayer();
-
+    // Cooldown na KOXa
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onKox(PlayerItemConsumeEvent event) {
         if (event.getItem().getType() != Material.ENCHANTED_GOLDEN_APPLE) {
             return;
         }
 
-        int cooldownSeconds = getConfig()
-                .getInt("cooldowns.enchanted_golden_apple", 20);
+        Player player = event.getPlayer();
 
-        int cooldownTicks = cooldownSeconds * 20;
+        if (player.hasCooldown(Material.ENCHANTED_GOLDEN_APPLE)) {
+            event.setCancelled(true);
+            return;
+        }
 
-        player.setCooldown(Material.ENCHANTED_GOLDEN_APPLE, cooldownTicks);
+        // Ustawiamy cooldown dopiero po rozpoczęciu jedzenia
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (player.isOnline()) {
+                player.setCooldown(
+                        Material.ENCHANTED_GOLDEN_APPLE,
+                        KOX_SECONDS * 20
+                );
+            }
+        }, 1L);
     }
 
     // Cooldown na perłe
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPearlThrow(ProjectileLaunchEvent event) {
         if (!(event.getEntity() instanceof EnderPearl pearl)) {
             return;
-        }
+        }  
 
         if (!(pearl.getShooter() instanceof Player player)) {
             return;
         }
 
-        int cooldownSeconds = getConfig().getInt("cooldowns.ender_pearl", 8);
-        int cooldownTicks = cooldownSeconds * 20;
+        if (player.hasCooldown(Material.ENDER_PEARL)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        int cooldownTicks = PEARL_SECONDS * 20;
 
         Bukkit.getScheduler().runTask(this, () -> {
-            player.setCooldown(Material.ENDER_PEARL, cooldownTicks);
+            if (player.isOnline()) {
+                player.setCooldown(
+                        Material.ENDER_PEARL,
+                        cooldownTicks
+                );
+            }
         });
     }
 
@@ -289,4 +391,168 @@ public final class Main extends JavaPlugin implements Listener {
             orb.setExperience(exp);
         });
     }
+
+    // Anty silka 2
+    boolean isStrength2(ItemStack item) {
+        if (item == null) {
+            return false;
+        } else if (item.getType() == Material.AIR) {
+            return false;
+        } else {
+            ItemMeta var3 = item.getItemMeta();
+            if (var3 instanceof PotionMeta) {
+                PotionMeta meta = (PotionMeta)var3;
+                return meta.getBasePotionType() == PotionType.STRONG_STRENGTH;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onEffect(EntityPotionEffectEvent e) {
+        PotionEffect newEff = e.getNewEffect();
+        if (newEff != null) {
+            if (newEff.getType().equals(PotionEffectType.STRENGTH) && newEff.getAmplifier() >= 1) {
+                e.setCancelled(true);
+                Entity var4 = e.getEntity();
+                if (var4 instanceof Player) {
+                    Player p = (Player)var4;
+                    p.sendMessage("§cSiła II jest zablokowana!");
+                }   
+            }  
+        }
+    }
+
+    @EventHandler
+    public void onCloud(AreaEffectCloudApplyEvent e) {
+        for(PotionEffect eff : e.getEntity().getCustomEffects()) {
+            if (eff.getType().equals(PotionEffectType.STRENGTH) && eff.getAmplifier() >= 1) {
+                e.setCancelled(true);
+                break;
+            }
+        }
+    }
+
+    // Anty prot 4 i sh 5
+    boolean isDiaArmor(Material m) {
+        return m == Material.DIAMOND_HELMET || m == Material.DIAMOND_CHESTPLATE || m == Material.DIAMOND_LEGGINGS || m == Material.DIAMOND_BOOTS;
+    }
+
+    @EventHandler(
+        priority = EventPriority.HIGHEST
+    )
+    public void onEnchant(EnchantItemEvent e) {
+        if (this.isDiaArmor(e.getItem().getType()) && (Integer)e.getEnchantsToAdd().getOrDefault(Enchantment.PROTECTION, 0) > this.MAX_PROT) {
+            e.getEnchantsToAdd().put(Enchantment.PROTECTION, this.MAX_PROT);
+        }
+
+        if (e.getItem().getType() == Material.DIAMOND_SWORD && (Integer)e.getEnchantsToAdd().getOrDefault(Enchantment.SHARPNESS, 0) > this.MAX_SHARP) {
+            e.getEnchantsToAdd().put(Enchantment.SHARPNESS, this.MAX_SHARP);
+        }
+
+    }
+
+    @EventHandler(
+        priority = EventPriority.HIGHEST
+    )
+    public void onAnvil(PrepareAnvilEvent e) {
+        ItemStack res = e.getResult();
+        if (res != null) {
+            if (this.isDiaArmor(res.getType()) && res.getEnchantmentLevel(Enchantment.PROTECTION) > this.MAX_PROT) {
+                e.setResult((ItemStack)null);
+            }
+
+            if (res.getType() == Material.DIAMOND_SWORD && res.getEnchantmentLevel(Enchantment.SHARPNESS) > this.MAX_SHARP) {
+                e.setResult((ItemStack)null);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onAnvilClick(InventoryClickEvent e) {
+        if (e.getInventory().getType() == InventoryType.ANVIL) {
+            if (e.getSlot() == 2) {
+                ItemStack res = e.getCurrentItem();
+                if (res != null) {
+                    if (this.isDiaArmor(res.getType()) && res.getEnchantmentLevel(Enchantment.PROTECTION) > this.MAX_PROT) {
+                        e.setCancelled(true);
+                        e.getWhoClicked().sendMessage("§cBlokada! Diax set max Prot " + this.MAX_PROT);
+                    }
+
+                    if (res.getType() == Material.DIAMOND_SWORD && res.getEnchantmentLevel(Enchantment.SHARPNESS) > this.MAX_SHARP) {
+                        e.setCancelled(true);
+                        e.getWhoClicked().sendMessage("§cBlokada! Diax miecz max Sharp " + this.MAX_SHARP);
+                    }
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onVillager(VillagerAcquireTradeEvent e) {
+        MerchantRecipe r = e.getRecipe();
+        ItemStack res = r.getResult();
+        if (this.isDiaArmor(res.getType()) && res.getEnchantmentLevel(Enchantment.PROTECTION) > this.MAX_PROT) {
+            ItemStack fixed = res.clone();
+            fixed.removeEnchantment(Enchantment.PROTECTION);
+            fixed.addEnchantment(Enchantment.PROTECTION, this.MAX_PROT);
+            MerchantRecipe nr = new MerchantRecipe(fixed, r.getUses(), r.getMaxUses(), r.hasExperienceReward(), r.getVillagerExperience(), r.getPriceMultiplier());
+            nr.setIngredients(r.getIngredients());
+            e.setRecipe(nr);
+        }
+
+        if (res.getType() == Material.DIAMOND_SWORD && res.getEnchantmentLevel(Enchantment.SHARPNESS) > this.MAX_SHARP) {
+            ItemStack fixed = res.clone();
+            fixed.removeEnchantment(Enchantment.SHARPNESS);
+            fixed.addEnchantment(Enchantment.SHARPNESS, this.MAX_SHARP);
+            MerchantRecipe nr = new MerchantRecipe(fixed, r.getUses(), r.getMaxUses(), r.hasExperienceReward(), r.getVillagerExperience(), r.getPriceMultiplier());
+            nr.setIngredients(r.getIngredients());
+            e.setRecipe(nr);
+        }
+
+        if (res.getType() == Material.ENCHANTED_BOOK) {
+            EnchantmentStorageMeta meta = (EnchantmentStorageMeta)res.getItemMeta();
+            if (meta == null) {
+                return;
+            }
+
+            if (meta.getStoredEnchantLevel(Enchantment.PROTECTION) > this.MAX_PROT) {
+                ItemStack fixed = res.clone();
+                EnchantmentStorageMeta fm = (EnchantmentStorageMeta)fixed.getItemMeta();
+                fm.removeStoredEnchant(Enchantment.PROTECTION);
+                fm.addStoredEnchant(Enchantment.PROTECTION, this.MAX_PROT, true);
+                fixed.setItemMeta(fm);
+                MerchantRecipe nr = new MerchantRecipe(fixed, r.getUses(), r.getMaxUses(), r.hasExperienceReward(), r.getVillagerExperience(), r.getPriceMultiplier());
+                nr.setIngredients(r.getIngredients());
+                e.setRecipe(nr);
+            }
+
+            if (meta.getStoredEnchantLevel(Enchantment.SHARPNESS) > this.MAX_SHARP) {
+                ItemStack fixed = res.clone();
+                EnchantmentStorageMeta fm = (EnchantmentStorageMeta)fixed.getItemMeta();
+                fm.removeStoredEnchant(Enchantment.SHARPNESS);
+                fm.addStoredEnchant(Enchantment.SHARPNESS, this.MAX_SHARP, true);
+                fixed.setItemMeta(fm);
+                MerchantRecipe nr = new MerchantRecipe(fixed, r.getUses(), r.getMaxUses(), r.hasExperienceReward(), r.getVillagerExperience(), r.getPriceMultiplier());
+                nr.setIngredients(r.getIngredients());
+                e.setRecipe(nr);
+            }
+        }
+   }
+
+   private String format(int totalSeconds) {
+    if (totalSeconds <= 0) {
+        return "0s.";
+    }
+
+    int minutes = totalSeconds / 60;
+    int seconds = totalSeconds % 60;
+
+    if (minutes > 0) {
+        return minutes + "min. " + seconds + "s.";
+    }
+
+    return seconds + "s.";
+}
 }
