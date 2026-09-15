@@ -1,0 +1,21 @@
+features:
+  block-op: true
+  block-teleport: true
+  block-give: true
+  block-gamemode: true
+  block-kill: true
+  block-creative: true
+  block-spectator: true
+  block-netherite: true
+  mace-damage-reduction: true
+  riptide-cooldown: true
+
+cooldowns:
+  mace-damage-multiplier: 0.5
+  riptide-cooldown-seconds: 20
+  enchanted_golden_apple: 5400
+  ender_pearl: 8
+
+messages:
+  kox-cooldown: "&cKoxy! Musisz poczekac jeszcze &e{TIME} &c!"
+  pearl-cooldown: "&cPerla! Musisz poczekac jeszcze &e{TIME} &c!"

@@ -1,0 +1,9 @@
+name: AntyOPPluginMc
+version: '${version}'
+author:
+  - AdmerPRO
+  - Itzz_Strefkaa_
+
+main: pl.admerpro.AntyOPPluginMc.Main
+api-version: '1.21.11'
+load: POSTWORLD
