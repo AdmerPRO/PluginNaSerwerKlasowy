@@ -10,3 +10,4 @@
 - [x] cooldown perły
 - [x] brak nede setów
 - [x] actionbar (cooldowny nad eq)
+- [ ] emotki itemów na actionbarze
