@@ -97,7 +97,7 @@ public final class Main extends JavaPlugin implements Listener {
                     int sec = (int) Math.ceil(p.getCooldown(Material.ENCHANTED_GOLDEN_APPLE) / 20.0);
 
                     if (sec > 0) {
-                        parts.add("§6KOX §f" + format(sec));
+                        parts.add("§6🍎 §f" + format(sec));
                     }
                 }
 
@@ -105,7 +105,7 @@ public final class Main extends JavaPlugin implements Listener {
                     int sec = (int) Math.ceil(p.getCooldown(Material.ENDER_PEARL) / 20.0);
 
                     if (sec > 0) {
-                        parts.add("§aPERLA §f" + format(sec));
+                        parts.add("§a🟢 §f" + format(sec));
                     }
                 }
 
