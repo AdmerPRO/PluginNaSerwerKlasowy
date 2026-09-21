@@ -54,6 +54,7 @@ public final class Main extends JavaPlugin implements Listener {
 
     private int KOX_SECONDS;
     private int PEARL_SECONDS;
+    private int SHIELD_SECONDS;
     private int TRIDENT_SECONDS;
 
     @Override
@@ -63,8 +64,9 @@ public final class Main extends JavaPlugin implements Listener {
         this.MAX_PROT = this.getConfig().getInt("max_enchantments.max-protection", 3);
         this.MAX_SHARP = this.getConfig().getInt("max_enchantments.max-sharpness", 4);
 
-        this.KOX_SECONDS = getConfig().getInt("cooldown.koks", 300);
-        this.PEARL_SECONDS = getConfig().getInt("cooldown.perla", 8);
+        this.KOX_SECONDS = getConfig().getInt("cooldowns.enchanted_golden_apple", 5400);
+        this.PEARL_SECONDS = getConfig().getInt("cooldowns.ender_pearl", 8);
+        this.SHIELD_SECONDS = getConfig().getInt("cooldowns.shield", 10);
         this.TRIDENT_SECONDS = getConfig().getInt("cooldown.trident", 5);
 
         getServer().getPluginManager().registerEvents(this, this);
@@ -115,6 +117,14 @@ public final class Main extends JavaPlugin implements Listener {
                     int sec = (int) Math.ceil(p.getCooldown(Material.TRIDENT) / 20.0);
                     if (sec > 0) {
                         parts.add("§b🔱 §f" + format(sec));
+                    }
+                }
+
+                if (p.hasCooldown(Material.SHIELD)) {
+                    int sec = (int) Math.ceil(p.getCooldown(Material.SHIELD) / 20.0);
+
+                    if (sec > 0) {
+                        parts.add("§9TARCZA §f" + format(sec));
                     }
                 }
 
@@ -282,7 +292,43 @@ public final class Main extends JavaPlugin implements Listener {
             }
         }, 2L);
     }
+  
+    // Cooldown na tarczę
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onShieldBlock(PlayerInteractEvent event) {
+        if (!getConfig().getBoolean("features.shield-cooldown", true)) {
+            return;
+        }
 
+        Player player = event.getPlayer();
+        ItemStack item = player.getInventory().getItemInMainHand();
+
+        if (item.getType() != Material.SHIELD) {
+            return;
+        }
+
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK && event.getAction() != Action.RIGHT_CLICK_AIR) {
+            return;
+        }
+
+        if (player.hasCooldown(Material.SHIELD)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        int cooldownTicks = SHIELD_SECONDS * 20;
+
+        Bukkit.getScheduler().runTask(this, () -> {
+            if (player.isOnline()) {
+                player.setCooldown(
+                        Material.SHIELD,
+                        cooldownTicks
+                );
+            }
+        });
+    }
+
+    // Drop expa z kamienia (StoneExp)
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onTridentLaunch(ProjectileLaunchEvent event) {
         if (event.getEntity().getType().toString().equals("TRIDENT")) {
