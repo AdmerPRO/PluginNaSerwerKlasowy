@@ -1,3 +1,4 @@
+
 package pl.admerpro.AntyOPPluginMc;
 
 import org.bukkit.ChatColor;
@@ -54,6 +55,7 @@ public final class Main extends JavaPlugin implements Listener {
     private int KOX_SECONDS;
     private int PEARL_SECONDS;
     private int SHIELD_SECONDS;
+    private int TRIDENT_SECONDS;
 
     @Override
     public void onEnable() {
@@ -65,6 +67,7 @@ public final class Main extends JavaPlugin implements Listener {
         this.KOX_SECONDS = getConfig().getInt("cooldowns.enchanted_golden_apple", 5400);
         this.PEARL_SECONDS = getConfig().getInt("cooldowns.ender_pearl", 8);
         this.SHIELD_SECONDS = getConfig().getInt("cooldowns.shield", 10);
+        this.TRIDENT_SECONDS = getConfig().getInt("cooldown.trident", 5);
 
         getServer().getPluginManager().registerEvents(this, this);
         this.getServer().getScheduler().runTaskTimer(this, () -> this.getServer().getOnlinePlayers().forEach((p) -> {
@@ -84,6 +87,7 @@ public final class Main extends JavaPlugin implements Listener {
                     }
 
                     if (it.getType() == Material.DIAMOND_SWORD && it.getEnchantmentLevel(Enchantment.SHARPNESS) > this.MAX_SHARP) {
+                        it.removeEnchantment(Enchantment.PROTECTION);
                         it.removeEnchantment(Enchantment.SHARPNESS);
                         it.addEnchantment(Enchantment.SHARPNESS, this.MAX_SHARP);
                     } 
@@ -97,17 +101,22 @@ public final class Main extends JavaPlugin implements Listener {
 
                 if (p.hasCooldown(Material.ENCHANTED_GOLDEN_APPLE)) {
                     int sec = (int) Math.ceil(p.getCooldown(Material.ENCHANTED_GOLDEN_APPLE) / 20.0);
-
                     if (sec > 0) {
-                        parts.add("§6KOX §f" + format(sec));
+                        parts.add("§6🍎 §f" + format(sec));
                     }
                 }
 
                 if (p.hasCooldown(Material.ENDER_PEARL)) {
                     int sec = (int) Math.ceil(p.getCooldown(Material.ENDER_PEARL) / 20.0);
-
                     if (sec > 0) {
-                        parts.add("§aPERLA §f" + format(sec));
+                        parts.add("§a🟢 §f" + format(sec));
+                    }
+                }
+
+                if (p.hasCooldown(Material.TRIDENT)) {
+                    int sec = (int) Math.ceil(p.getCooldown(Material.TRIDENT) / 20.0);
+                    if (sec > 0) {
+                        parts.add("§b🔱 §f" + format(sec));
                     }
                 }
 
@@ -142,242 +151,148 @@ public final class Main extends JavaPlugin implements Listener {
         String message = event.getMessage().toLowerCase().trim();
         Player player = event.getPlayer();
 
-        // Blokowanie /op
         if ((message.equals("/op") || message.startsWith("/op ") ||
                 message.equals("/minecraft:op") || message.startsWith("/minecraft:op ")) && getConfig().getBoolean("features.block-op")) {
-
             event.setCancelled(true);
-
-            player.sendMessage(ChatColor.RED +
-                    "Używanie komendy /op jest całkowicie zablokowane na tym serwerze!");
-
-            getLogger().warning(
-                    "Gracz " + player.getName() +
-                            " próbował użyć zablokowanej komendy /op!"
-            );
-
+            player.sendMessage(ChatColor.RED + "Używanie komendy /op jest całkowicie zablokowane na tym serwerze!");
+            getLogger().warning("Gracz " + player.getName() + " próbował użyć zablokowanej komendy /op!");
             return;
         }
 
-        // Blokowanie /teleport
         if ((message.equals("/teleport") || message.startsWith("/teleport ") ||
                 message.equals("/minecraft:teleport") ||
                 message.startsWith("/minecraft:teleport ")) && getConfig().getBoolean("features.block-teleport")) {
-
             event.setCancelled(true);
-
-            player.sendMessage(ChatColor.RED +
-                    "Używanie komendy /teleport jest całkowicie zablokowane na tym serwerze!");
-
-            getLogger().warning(
-                    "Gracz " + player.getName() +
-                            " próbował użyć zablokowanej komendy /teleport!"
-            );
-
+            player.sendMessage(ChatColor.RED + "Używanie komendy /teleport jest całkowicie zablokowane na tym serwerze!");
+            getLogger().warning("Gracz " + player.getName() + " próbował użyć zablokowanej komendy /teleport!");
             return;
         }
 
-        // Blokowanie /give
         if ((message.equals("/give") || message.startsWith("/give ") ||
                 message.equals("/minecraft:give") ||
                 message.startsWith("/minecraft:give ")) && getConfig().getBoolean("features.block-give")) {
-
             event.setCancelled(true);
-
-            player.sendMessage(ChatColor.RED +
-                    "Używanie komendy /give jest całkowicie zablokowane na tym serwerze!");
-
-            getLogger().warning(
-                    "Gracz " + player.getName() +
-                            " próbował użyć zablokowanej komendy /give!"
-            );
-
+            player.sendMessage(ChatColor.RED + "Używanie komendy /give jest całkowicie zablokowane na tym serwerze!");
+            getLogger().warning("Gracz " + player.getName() + " próbował użyć zablokowanej komendy /give!");
             return;
         }
 
-        // Blokowanie /gamemode
         if ((message.equals("/gamemode") || message.startsWith("/gamemode ") ||
                 message.equals("/minecraft:gamemode") ||
                 message.startsWith("/minecraft:gamemode ")) && getConfig().getBoolean("features.block-gamemode")) {
-
             event.setCancelled(true);
-
-            player.sendMessage(ChatColor.RED +
-                    "Używanie komendy /gamemode jest całkowicie zablokowane na tym serwerze!");
-
-            getLogger().warning(
-                    "Gracz " + player.getName() +
-                            " próbował użyć zablokowanej komendy /gamemode!"
-            );
-
+            player.sendMessage(ChatColor.RED + "Używanie komendy /gamemode jest całkowicie zablokowane na tym serwerze!");
+            getLogger().warning("Gracz " + player.getName() + " próbował użyć zablokowanej komendy /gamemode!");
             return;
         }
 
-        // Blokowanie /kill
         if ((message.equals("/kill") || message.startsWith("/kill ") ||
                 message.equals("/minecraft:kill") ||
                 message.startsWith("/minecraft:kill ")) && getConfig().getBoolean("features.block-kill")) {
-
             event.setCancelled(true);
-
-            player.sendMessage(ChatColor.RED +
-                    "Używanie komendy /kill jest całkowicie zablokowane na tym serwerze!");
-
-            getLogger().warning(
-                    "Gracz " + player.getName() +
-                            " próbował użyć zablokowanej komendy /kill!"
-            );
+            player.sendMessage(ChatColor.RED + "Używanie komendy /kill jest całkowicie zablokowane na tym serwerze!");
+            getLogger().warning("Gracz " + player.getName() + " próbował użyć zablokowanej komendy /kill!");
         }
     }
 
-    // Blokowanie Creative i Spectator
     @EventHandler
     public void onGameModeChange(PlayerGameModeChangeEvent event) {
         GameMode mode = event.getNewGameMode();
-
-        if (mode == GameMode.CREATIVE &&
-                getConfig().getBoolean("features.block-creative")) {
-
+        if (mode == GameMode.CREATIVE && getConfig().getBoolean("features.block-creative")) {
             event.setCancelled(true);
-
-            event.getPlayer().sendMessage(
-                    ChatColor.RED + "Tryb Creative jest zablokowany."
-            );
-
+            event.getPlayer().sendMessage(ChatColor.RED + "Tryb Creative jest zablokowany.");
             return;
         }
-
-        if (mode == GameMode.SPECTATOR &&
-                getConfig().getBoolean("features.block-spectator")) {
-
+        if (mode == GameMode.SPECTATOR && getConfig().getBoolean("features.block-spectator")) {
             event.setCancelled(true);
-
-            event.getPlayer().sendMessage(
-                    ChatColor.RED + "Tryb Spectator jest zablokowany."
-            );
+            event.getPlayer().sendMessage(ChatColor.RED + "Tryb Spectator jest zablokowany.");
         }
     }
 
-    // Blokowanie ulepszania diamentowego ekwipunku do Netherite
     @EventHandler
     public void onPrepareSmithing(PrepareSmithingEvent event) {
-        if (!getConfig().getBoolean("features.block-netherite")) {
-            return;
-        }
-
-        if (event.getResult() == null) {
-            return;
-        }
-
+        if (!getConfig().getBoolean("features.block-netherite")) return;
+        if (event.getResult() == null) return;
         Material result = event.getResult().getType();
-
-        if (result == Material.NETHERITE_HELMET ||
-                result == Material.NETHERITE_CHESTPLATE ||
-                result == Material.NETHERITE_LEGGINGS ||
-                result == Material.NETHERITE_BOOTS) {
-
+        if (result == Material.NETHERITE_HELMET || result == Material.NETHERITE_CHESTPLATE || result == Material.NETHERITE_LEGGINGS || result == Material.NETHERITE_BOOTS) {
             event.setResult(null);
         }
     }
 
-    // Zmniejszenie obrażeń Mace o 50%
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event) {
-
-        if (!getConfig().getBoolean("features.mace-damage-reduction")) {
-            return;
-        }
-
-        if (!(event.getDamager() instanceof Player player)) {
-            return;
-        }
-
+        if (!getConfig().getBoolean("features.mace-damage-reduction")) return;
+        if (!(event.getDamager() instanceof Player player)) return;
         ItemStack item = player.getInventory().getItemInMainHand();
-
         if (item.getType() == Material.MACE) {
-            double multiplier =
-                    getConfig().getDouble("settings.mace-damage-multiplier", 0.5);
-
+            double multiplier = getConfig().getDouble("settings.mace-damage-multiplier", 0.5);
             event.setDamage(event.getDamage() * multiplier);
         }
     }
 
-    // Cooldown na riptide
     @EventHandler
     public void onRiptide(PlayerRiptideEvent event) {
-        if (!getConfig().getBoolean("features.riptide-cooldown")) {
-            return;
-        }
-
         Player player = event.getPlayer();
-
         if (player.hasCooldown(Material.TRIDENT)) {
             event.setCancelled(true);
             return;
         }
-
-        int cooldownSeconds =
-                getConfig().getInt("cooldown.riptide-cooldown-seconds", 20);
-
+        int cooldownSeconds = getConfig().getInt("cooldown.trident", TRIDENT_SECONDS);
         int cooldownTicks = cooldownSeconds * 20;
-
         player.setCooldown(Material.TRIDENT, cooldownTicks);
     }
 
-    // Cooldown na koksy
-    // Cooldown na KOXa
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onKox(PlayerItemConsumeEvent event) {
-        if (event.getItem().getType() != Material.ENCHANTED_GOLDEN_APPLE) {
-            return;
-        }
-
+        if (event.getItem().getType() != Material.ENCHANTED_GOLDEN_APPLE) return;
         Player player = event.getPlayer();
-
         if (player.hasCooldown(Material.ENCHANTED_GOLDEN_APPLE)) {
             event.setCancelled(true);
             return;
         }
-
-        // Ustawiamy cooldown dopiero po rozpoczęciu jedzenia
         Bukkit.getScheduler().runTaskLater(this, () -> {
             if (player.isOnline()) {
-                player.setCooldown(
-                        Material.ENCHANTED_GOLDEN_APPLE,
-                        KOX_SECONDS * 20
-                );
+                player.setCooldown(Material.ENCHANTED_GOLDEN_APPLE, KOX_SECONDS * 20);
             }
         }, 1L);
     }
 
-    // Cooldown na perłe
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPearlThrow(ProjectileLaunchEvent event) {
-        if (!(event.getEntity() instanceof EnderPearl pearl)) {
-            return;
-        }  
-
-        if (!(pearl.getShooter() instanceof Player player)) {
-            return;
-        }
-
+        if (!(event.getEntity() instanceof EnderPearl pearl)) return;
+        if (!(pearl.getShooter() instanceof Player player)) return;
         if (player.hasCooldown(Material.ENDER_PEARL)) {
             event.setCancelled(true);
             return;
         }
-
         int cooldownTicks = PEARL_SECONDS * 20;
-
         Bukkit.getScheduler().runTask(this, () -> {
             if (player.isOnline()) {
-                player.setCooldown(
-                        Material.ENDER_PEARL,
-                        cooldownTicks
-                );
+                player.setCooldown(Material.ENDER_PEARL, cooldownTicks);
             }
         });
     }
 
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onTridentThrow(PlayerInteractEvent event) {
+        if (event.getItem() == null || event.getItem().getType() != Material.TRIDENT) return;
+        if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        Player player = event.getPlayer();
+        if (player.hasCooldown(Material.TRIDENT)) {
+            event.setCancelled(true);
+            player.sendActionBar("§cTRIDENT §f" + format((int)Math.ceil(player.getCooldown(Material.TRIDENT)/20.0)));
+            return;
+        }
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (player.isOnline() && player.hasCooldown(Material.TRIDENT) == false) {
+                // Sprawdź czy faktycznie rzucił (jeśli ma Riptide to i tak Riptide event ustawi)
+                if (player.getInventory().getItemInMainHand().getType() == Material.TRIDENT || player.getInventory().getItemInOffHand().getType() == Material.TRIDENT) {
+                    // Jeśli nie ma już tridenta w ręce = rzucił
+                }
+            }
+        }, 2L);
+    }
+  
     // Cooldown na tarczę
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onShieldBlock(PlayerInteractEvent event) {
@@ -414,36 +329,45 @@ public final class Main extends JavaPlugin implements Listener {
     }
 
     // Drop expa z kamienia (StoneExp)
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onTridentLaunch(ProjectileLaunchEvent event) {
+        if (event.getEntity().getType().toString().equals("TRIDENT")) {
+            if (event.getEntity().getShooter() instanceof Player player) {
+                if (player.hasCooldown(Material.TRIDENT)) {
+                    event.setCancelled(true);
+                    return;
+                }
+                int cooldownTicks = TRIDENT_SECONDS * 20;
+                Bukkit.getScheduler().runTask(this, () -> {
+                    if (player.isOnline()) {
+                        player.setCooldown(Material.TRIDENT, cooldownTicks);
+                    }
+                });
+            }
+        }
+    }
+
     @EventHandler
     public void onBreak(BlockBreakEvent e) {
         Block b = e.getBlock();
         if (b.getType() != Material.STONE) return;
-
         if (getConfig().getBoolean("stone-exp.only-pickaxe", true)) {
             Material tool = e.getPlayer().getInventory().getItemInMainHand().getType();
             if (!tool.name().endsWith("_PICKAXE")) return;
         }
-
-        // nie dawaj expa jak kamien postawiony przez gracza (anticheat)
         if (!e.isDropItems()) return;
-
         int min = getConfig().getInt("stone-exp.exp-min", 1);
         int max = getConfig().getInt("stone-exp.exp-max", 3);
         int exp = min + rand.nextInt(max - min + 1);
-
-        // drop exp orb
         b.getWorld().spawn(b.getLocation().add(0.5, 0.5, 0.5), org.bukkit.entity.ExperienceOrb.class, orb -> {
             orb.setExperience(exp);
         });
     }
 
-    // Anty silka 2
     boolean isStrength2(ItemStack item) {
-        if (item == null) {
-            return false;
-        } else if (item.getType() == Material.AIR) {
-            return false;
-        } else {
+        if (item == null) return false;
+        else if (item.getType() == Material.AIR) return false;
+        else {
             ItemMeta var3 = item.getItemMeta();
             if (var3 instanceof PotionMeta) {
                 PotionMeta meta = (PotionMeta)var3;
@@ -479,35 +403,27 @@ public final class Main extends JavaPlugin implements Listener {
         }
     }
 
-    // Anty prot 4 i sh 5
     boolean isDiaArmor(Material m) {
         return m == Material.DIAMOND_HELMET || m == Material.DIAMOND_CHESTPLATE || m == Material.DIAMOND_LEGGINGS || m == Material.DIAMOND_BOOTS;
     }
 
-    @EventHandler(
-        priority = EventPriority.HIGHEST
-    )
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onEnchant(EnchantItemEvent e) {
         if (this.isDiaArmor(e.getItem().getType()) && (Integer)e.getEnchantsToAdd().getOrDefault(Enchantment.PROTECTION, 0) > this.MAX_PROT) {
             e.getEnchantsToAdd().put(Enchantment.PROTECTION, this.MAX_PROT);
         }
-
         if (e.getItem().getType() == Material.DIAMOND_SWORD && (Integer)e.getEnchantsToAdd().getOrDefault(Enchantment.SHARPNESS, 0) > this.MAX_SHARP) {
             e.getEnchantsToAdd().put(Enchantment.SHARPNESS, this.MAX_SHARP);
         }
-
     }
 
-    @EventHandler(
-        priority = EventPriority.HIGHEST
-    )
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onAnvil(PrepareAnvilEvent e) {
         ItemStack res = e.getResult();
         if (res != null) {
             if (this.isDiaArmor(res.getType()) && res.getEnchantmentLevel(Enchantment.PROTECTION) > this.MAX_PROT) {
                 e.setResult((ItemStack)null);
             }
-
             if (res.getType() == Material.DIAMOND_SWORD && res.getEnchantmentLevel(Enchantment.SHARPNESS) > this.MAX_SHARP) {
                 e.setResult((ItemStack)null);
             }
@@ -524,7 +440,6 @@ public final class Main extends JavaPlugin implements Listener {
                         e.setCancelled(true);
                         e.getWhoClicked().sendMessage("§cBlokada! Diax set max Prot " + this.MAX_PROT);
                     }
-
                     if (res.getType() == Material.DIAMOND_SWORD && res.getEnchantmentLevel(Enchantment.SHARPNESS) > this.MAX_SHARP) {
                         e.setCancelled(true);
                         e.getWhoClicked().sendMessage("§cBlokada! Diax miecz max Sharp " + this.MAX_SHARP);
@@ -546,7 +461,6 @@ public final class Main extends JavaPlugin implements Listener {
             nr.setIngredients(r.getIngredients());
             e.setRecipe(nr);
         }
-
         if (res.getType() == Material.DIAMOND_SWORD && res.getEnchantmentLevel(Enchantment.SHARPNESS) > this.MAX_SHARP) {
             ItemStack fixed = res.clone();
             fixed.removeEnchantment(Enchantment.SHARPNESS);
@@ -555,13 +469,9 @@ public final class Main extends JavaPlugin implements Listener {
             nr.setIngredients(r.getIngredients());
             e.setRecipe(nr);
         }
-
         if (res.getType() == Material.ENCHANTED_BOOK) {
             EnchantmentStorageMeta meta = (EnchantmentStorageMeta)res.getItemMeta();
-            if (meta == null) {
-                return;
-            }
-
+            if (meta == null) return;
             if (meta.getStoredEnchantLevel(Enchantment.PROTECTION) > this.MAX_PROT) {
                 ItemStack fixed = res.clone();
                 EnchantmentStorageMeta fm = (EnchantmentStorageMeta)fixed.getItemMeta();
@@ -572,7 +482,6 @@ public final class Main extends JavaPlugin implements Listener {
                 nr.setIngredients(r.getIngredients());
                 e.setRecipe(nr);
             }
-
             if (meta.getStoredEnchantLevel(Enchantment.SHARPNESS) > this.MAX_SHARP) {
                 ItemStack fixed = res.clone();
                 EnchantmentStorageMeta fm = (EnchantmentStorageMeta)fixed.getItemMeta();
@@ -587,17 +496,10 @@ public final class Main extends JavaPlugin implements Listener {
    }
 
    private String format(int totalSeconds) {
-    if (totalSeconds <= 0) {
-        return "0s.";
-    }
-
+    if (totalSeconds <= 0) return "0s.";
     int minutes = totalSeconds / 60;
     int seconds = totalSeconds % 60;
-
-    if (minutes > 0) {
-        return minutes + "min. " + seconds + "s.";
-    }
-
+    if (minutes > 0) return minutes + "min. " + seconds + "s.";
     return seconds + "s.";
 }
 }
